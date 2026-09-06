@@ -1,4 +1,4 @@
-print("dqr_bot loaded!")
+print("dqr_bot !")
 
 local utilsUrl = "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
 
