@@ -1,18 +1,63 @@
-print("dqr_bot !")
+print("dqr_bot loaded!")
 
-local utilsUrl = "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
+--------------------------------------------------
+-- Load modules
+--------------------------------------------------
 
-local utilsSource = game:HttpGet(utilsUrl)
+local Utils = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
+))()
 
-print("Utils length:", #utilsSource)
-print("Utils response:", utilsSource)
+local Methods = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Methods.lua"
+))()
 
-local utilsLoader = loadstring(utilsSource)
+--------------------------------------------------
+-- Place check
+--------------------------------------------------
 
-print("Utils loader:", utilsLoader)
+if game.PlaceId ~= 85776757589518 then
+    return
+end
 
-local Utils = utilsLoader()
+print("Correct place detected.")
 
-print("Utils module:", Utils)
-print("StartDungeon:", Utils and Utils.StartDungeon)
-print("AirSuspend:", Utils and Utils.AirSuspend)
+--------------------------------------------------
+-- Start dungeon
+--------------------------------------------------
+
+Utils.StartDungeon()
+
+--------------------------------------------------
+-- Air suspend
+--------------------------------------------------
+
+Utils.AirSuspend()
+
+--------------------------------------------------
+-- Locate -> Tween -> Wait -> Repeat
+--------------------------------------------------
+
+while true do
+
+    local clusters = Methods.LocateEnemies()
+
+    if #clusters > 0 then
+
+        for _, cluster in ipairs(clusters) do
+
+            local tween = Methods.Tween(cluster.center)
+
+            tween.Completed:Wait()
+
+            task.wait(6)
+
+        end
+
+    else
+
+        task.wait(1)
+
+    end
+
+end
