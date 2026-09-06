@@ -2,7 +2,7 @@ local Methods = {}
 
 
 -- STAY ABOVE NPCS
-function methods.AirSuspend()
+function Methods.AirSuspend()
     local player = game.Players.LocalPlayer
 
     if getgenv().__AirSuspended then
