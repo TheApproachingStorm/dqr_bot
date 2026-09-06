@@ -447,30 +447,62 @@ function Methods.Tween(targetPosition, speed)
 
     speed = speed or 24
 
-    local distance = (targetPosition - hrp.Position).Magnitude
-    local duration = distance / speed
+    local PAUSE_DISTANCE = 50
+    local PAUSE_TIME = 1
 
-    local tweenInfo = TweenInfo.new(
-        duration,
-        Enum.EasingStyle.Linear,
-        Enum.EasingDirection.Out
-    )
+    local completed = Instance.new("BindableEvent")
 
-    local tween = TweenService:Create(
-        hrp,
-        tweenInfo,
-        {
-            CFrame = CFrame.new(targetPosition)
-        }
-    )
+    task.spawn(function()
+        local startPosition = hrp.Position
+        local totalDistance = (targetPosition - startPosition).Magnitude
 
-    print("Distance:", distance)
-    print("Tween duration:", duration)
-    print("Speed:", speed)
+        if totalDistance <= 0.1 then
+            completed:Fire()
+            completed:Destroy()
+            return
+        end
 
-    tween:Play()
+        local direction = (targetPosition - startPosition).Unit
+        local travelled = 0
 
-    return tween
+        while travelled < totalDistance do
+            local chunkDistance = math.min(
+                PAUSE_DISTANCE,
+                totalDistance - travelled
+            )
+
+            travelled += chunkDistance
+
+            local nextPosition =
+                startPosition + direction * travelled
+
+            local tween = TweenService:Create(
+                hrp,
+                TweenInfo.new(
+                    chunkDistance / speed,
+                    Enum.EasingStyle.Linear,
+                    Enum.EasingDirection.Out
+                ),
+                {
+                    CFrame = CFrame.new(nextPosition)
+                }
+            )
+
+            tween:Play()
+            tween.Completed:Wait()
+
+            if travelled < totalDistance then
+                task.wait(PAUSE_TIME)
+            end
+        end
+
+        completed:Fire()
+        completed:Destroy()
+    end)
+
+    return {
+        Completed = completed.Event
+    }
 end
 
 return Methods
