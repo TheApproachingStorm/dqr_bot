@@ -32,7 +32,7 @@ Utils.StartDungeon()
 -- Air suspend
 --------------------------------------------------
 
-Utils.AirSuspend()
+Methods.AirSuspend()
 
 --------------------------------------------------
 -- Locate -> Tween -> Wait -> Repeat
