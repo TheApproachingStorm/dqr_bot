@@ -1,11 +1,11 @@
 print("dqr_bot loaded!")
 
 local Utils = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/YOUR_USERNAME/dqr_bot/main/Utils.lua"
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
 ))()
 
 local Methods = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/YOUR_USERNAME/dqr_bot/main/Methods.lua"
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Methods.lua"
 ))()
 
 --------------------------------------------------
