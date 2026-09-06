@@ -435,9 +435,6 @@ function Methods.LocateEnemies(minClusterSize, clusterDistance)
     return results
 end
 
-
-return Methods
-
 -- TWEEN TO CLUSTERS
 function Methods.Tween(targetPosition, speed)
     local Players = game:GetService("Players")
@@ -474,3 +471,6 @@ function Methods.Tween(targetPosition, speed)
 
     return tween
 end
+
+return Methods
+
