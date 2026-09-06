@@ -1,55 +1,18 @@
 print("dqr_bot loaded!")
 
-local Utils = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
-))()
+local utilsUrl = "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Utils.lua"
 
-local Methods = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/Methods.lua"
-))()
+local utilsSource = game:HttpGet(utilsUrl)
 
---------------------------------------------------
--- Place check
---------------------------------------------------
+print("Utils length:", #utilsSource)
+print("Utils response:", utilsSource)
 
-if game.PlaceId ~= 85776757589518 then
-    return
-end
+local utilsLoader = loadstring(utilsSource)
 
---------------------------------------------------
--- Start dungeon
---------------------------------------------------
+print("Utils loader:", utilsLoader)
 
-Utils.StartDungeon()
+local Utils = utilsLoader()
 
---------------------------------------------------
--- Air suspend
---------------------------------------------------
-
-Utils.AirSuspend()
-
---------------------------------------------------
--- Locate -> Tween -> Wait -> Repeat
---------------------------------------------------
-
-while true do
-
-    local clusters = Methods.LocateEnemies()
-
-    if #clusters > 0 then
-
-        for _, cluster in ipairs(clusters) do
-
-            local tween = Methods.Tween(cluster.center)
-
-            tween.Completed:Wait()
-
-            task.wait(6)
-
-        end
-
-    else
-        task.wait(1)
-    end
-
-end
+print("Utils module:", Utils)
+print("StartDungeon:", Utils and Utils.StartDungeon)
+print("AirSuspend:", Utils and Utils.AirSuspend)
