@@ -16,6 +16,8 @@ print("Correct place detected.")
 
 Utils.StartDungeon()
 
+task.wait(6)
+
 Methods.AirSuspend()
 
 while true do
