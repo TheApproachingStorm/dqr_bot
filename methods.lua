@@ -1,3 +1,5 @@
+local Methods = {}
+
 
 -- STAY ABOVE NPCS
 function methods.AirSuspend()
@@ -41,8 +43,6 @@ function methods.AirSuspend()
 end
 
 -- LOCATE ENEMIES
-local Methods = {}
-
 local MIN_CLUSTER_SIZE = 2
 local CLUSTER_DISTANCE = 15
 
