@@ -110,5 +110,16 @@ function Utils.PlayGame()
     camera.CameraSubject = humanoid
 end
 
+// noclip 
+function Utils.Noclip()
+    local character = player.Character
+    if not character then return end
+
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
 
 return Utils
