@@ -1,4 +1,4 @@
-print("dqr_bot loaded!")
+print("dqr_bot v2!")
 
 local Utils = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua?t=" .. os.time()
