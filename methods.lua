@@ -582,5 +582,3 @@ end
 
 return Methods
 
-return Methods
-
