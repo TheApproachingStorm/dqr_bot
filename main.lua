@@ -25,9 +25,9 @@ while true do
 
     if #clusters > 0 then
         for _, cluster in ipairs(clusters) do
-            local tween = Methods.Tween(cluster.center)
+            local walk = Methods.WalkTo(cluster.center)
 
-            tween.Completed:Wait()
+            walk.Completed:Wait()
 
             task.wait(6)
         end
