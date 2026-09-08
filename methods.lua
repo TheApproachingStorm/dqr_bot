@@ -528,54 +528,48 @@ function Methods.WalkTo(targetPosition)
     local completed = Instance.new("BindableEvent")
 
     task.spawn(function()
-        local target = Vector3.new(
-            targetPosition.X,
-            hrp.Position.Y,
-            targetPosition.Z
-        )
+        local REACH_DISTANCE = 2
+
+        local oldCameraRelative = controls.cameraRelative
+        controls.cameraRelative = false
 
         while true do
             task.wait()
 
             local currentPosition = hrp.Position
 
-            local offset = target - Vector3.new(
-                currentPosition.X,
-                target.Y,
-                currentPosition.Z
+            local offset = Vector3.new(
+                targetPosition.X - currentPosition.X,
+                0,
+                targetPosition.Z - currentPosition.Z
             )
 
             local distance = offset.Magnitude
 
-            -- Close enough
-            if distance <= 2 then
+            if distance <= REACH_DISTANCE then
                 break
             end
 
             local direction = offset.Unit
 
-            local camera = workspace.CurrentCamera
-
-            -- Convert world direction into camera-relative direction
-            local forward = direction:Dot(camera.CFrame.LookVector)
-            local right = direction:Dot(camera.CFrame.RightVector)
-
-            -- Feed the native Keyboard controller
-            keyboard.forwardValue = -forward
-            keyboard.backwardValue = 0
-            keyboard.leftValue = -right
-            keyboard.rightValue = right
-
-            keyboard:UpdateMovement(Enum.UserInputState.Begin)
+            -- Direct world-space movement
+            keyboard.moveVector = Vector3.new(
+                direction.X,
+                0,
+                direction.Z
+            )
         end
 
         -- Stop movement
+        keyboard.moveVector = Vector3.zero
         keyboard.forwardValue = 0
         keyboard.backwardValue = 0
         keyboard.leftValue = 0
         keyboard.rightValue = 0
 
         keyboard:UpdateMovement(Enum.UserInputState.End)
+
+        controls.cameraRelative = oldCameraRelative
 
         completed:Fire()
         completed:Destroy()
@@ -585,6 +579,8 @@ function Methods.WalkTo(targetPosition)
         Completed = completed.Event
     }
 end
+
+return Methods
 
 return Methods
 
