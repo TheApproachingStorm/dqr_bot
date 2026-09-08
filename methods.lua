@@ -544,15 +544,12 @@ function Methods.WalkTo(targetPosition)
                 targetPosition.Z - currentPosition.Z
             )
 
-            local distance = offset.Magnitude
-
-            if distance <= REACH_DISTANCE then
+            if offset.Magnitude <= REACH_DISTANCE then
                 break
             end
 
             local direction = offset.Unit
 
-            -- Direct world-space movement
             keyboard.moveVector = Vector3.new(
                 direction.X,
                 0,
@@ -560,7 +557,6 @@ function Methods.WalkTo(targetPosition)
             )
         end
 
-        -- Stop movement
         keyboard.moveVector = Vector3.zero
         keyboard.forwardValue = 0
         keyboard.backwardValue = 0
