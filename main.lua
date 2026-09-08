@@ -1,4 +1,4 @@
-print("dqr_bot v2!")
+print("dqr_bot v3!")
 
 local Utils = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua?t=" .. os.time()
@@ -18,6 +18,7 @@ Utils.StartDungeon()
 
 task.wait(6)
 
+Utils.Noclip()
 Methods.AirSuspend()
 
 while true do
