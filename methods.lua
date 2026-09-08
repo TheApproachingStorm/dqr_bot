@@ -507,3 +507,73 @@ end
 
 return Methods
 
+-- WALK TO CLUSTERS
+function Methods.WalkTo(targetPosition, speed)
+    local Players = game:GetService("Players")
+
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    local playerModule = require(
+        player.PlayerScripts:WaitForChild("PlayerModule")
+    )
+
+    local controls = playerModule:GetControls()
+    local keyboard = controls:GetActiveController()
+
+    if not keyboard then
+        warn("No active controller")
+        return
+    end
+
+    local completed = Instance.new("BindableEvent")
+
+    task.spawn(function()
+        local target = Vector3.new(
+            targetPosition.X,
+            hrp.Position.Y,
+            targetPosition.Z
+        )
+
+        if (target - hrp.Position).Magnitude <= 1 then
+            completed:Fire()
+            completed:Destroy()
+            return
+        end
+
+        keyboard.forwardValue = -1
+        keyboard:UpdateMovement(Enum.UserInputState.Begin)
+
+        while true do
+            task.wait()
+
+            local currentPosition = hrp.Position
+
+            local distance = (
+                Vector3.new(target.X, currentPosition.Y, target.Z)
+                - currentPosition
+            ).Magnitude
+
+            if distance <= 2 then
+                break
+            end
+
+            keyboard.forwardValue = -1
+            keyboard:UpdateMovement(Enum.UserInputState.Begin)
+        end
+
+        keyboard.forwardValue = 0
+        keyboard:UpdateMovement(Enum.UserInputState.End)
+
+        completed:Fire()
+        completed:Destroy()
+    end)
+
+    return {
+        Completed = completed.Event
+    }
+end
+
+return Methods
+
