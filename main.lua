@@ -1,4 +1,4 @@
-print("dqr_bot v4!")
+print("dqr_bot v5!")
 
 local cacheBust = tostring(os.time())
 
