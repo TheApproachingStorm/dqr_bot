@@ -505,8 +505,6 @@ function Methods.Tween(targetPosition, speed)
     }
 end
 
-return Methods
-
 -- WALK TO CLUSTERS
 function Methods.WalkTo(targetPosition, speed)
     local Players = game:GetService("Players")
