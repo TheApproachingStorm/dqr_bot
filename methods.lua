@@ -506,7 +506,7 @@ function Methods.Tween(targetPosition, speed)
 end
 
 -- WALK TO CLUSTERS
-function Methods.WalkTo(targetPosition, speed)
+function Methods.WalkTo(targetPosition)
     local Players = game:GetService("Players")
 
     local player = Players.LocalPlayer
@@ -534,34 +534,47 @@ function Methods.WalkTo(targetPosition, speed)
             targetPosition.Z
         )
 
-        if (target - hrp.Position).Magnitude <= 1 then
-            completed:Fire()
-            completed:Destroy()
-            return
-        end
-
-        keyboard.forwardValue = -1
-        keyboard:UpdateMovement(Enum.UserInputState.Begin)
-
         while true do
             task.wait()
 
             local currentPosition = hrp.Position
 
-            local distance = (
-                Vector3.new(target.X, currentPosition.Y, target.Z)
-                - currentPosition
-            ).Magnitude
+            local offset = target - Vector3.new(
+                currentPosition.X,
+                target.Y,
+                currentPosition.Z
+            )
 
+            local distance = offset.Magnitude
+
+            -- Close enough
             if distance <= 2 then
                 break
             end
 
-            keyboard.forwardValue = -1
+            local direction = offset.Unit
+
+            local camera = workspace.CurrentCamera
+
+            -- Convert world direction into camera-relative direction
+            local forward = direction:Dot(camera.CFrame.LookVector)
+            local right = direction:Dot(camera.CFrame.RightVector)
+
+            -- Feed the native Keyboard controller
+            keyboard.forwardValue = -forward
+            keyboard.backwardValue = 0
+            keyboard.leftValue = -right
+            keyboard.rightValue = right
+
             keyboard:UpdateMovement(Enum.UserInputState.Begin)
         end
 
+        -- Stop movement
         keyboard.forwardValue = 0
+        keyboard.backwardValue = 0
+        keyboard.leftValue = 0
+        keyboard.rightValue = 0
+
         keyboard:UpdateMovement(Enum.UserInputState.End)
 
         completed:Fire()
