@@ -1,11 +1,13 @@
 print("dqr_bot v4!")
 
+local cacheBust = tostring(os.time())
+
 local Utils = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua?t=" .. os.time()
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua?t=" .. cacheBust
 ))()
 
 local Methods = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/methods.lua?t=" .. os.time()
+    "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/methods.lua?t=" .. cacheBust
 ))()
 
 if game.PlaceId ~= 85776757589518 then
