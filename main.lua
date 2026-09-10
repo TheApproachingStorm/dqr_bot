@@ -12,10 +12,10 @@ until player.Character
 
 print("character spawned.")
 
-warn("dqr_bot v9!")
+warn("dqr_bot v10!")
     -- load modules
-    local Utils = loadstring(readfile("dqr_bot-main/utils.lua"))()
-    local Methods = loadstring(readfile("dqr_bot-main/methods.lua"))()
+    local Utils = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua"))()
+    local Methods = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/methods.lua"))()
 
 if game.PlaceId == 85776757589518 then -- dungeon
 
