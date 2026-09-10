@@ -475,14 +475,39 @@ function Methods.WalkPlayback()
     end
 
     --==================================================
+    -- PLAYER CONTROLLER
+    --==================================================
+
+    local playerModule = require(
+        player.PlayerScripts:WaitForChild("PlayerModule")
+    )
+
+    local controls = playerModule:GetControls()
+    local keyboard = controls:GetActiveController()
+
+    if not keyboard then
+        warn("WalkPlayback: No active controller.")
+        return
+    end
+
+    local oldCameraRelative = controls.cameraRelative
+    controls.cameraRelative = false
+
+    --==================================================
     -- STOP MOVEMENT
     --==================================================
 
     local function StopMovement()
 
-        player:Move(
-            Vector3.zero,
-            false
+        keyboard.moveVector = Vector3.zero
+
+        keyboard.forwardValue = 0
+        keyboard.backwardValue = 0
+        keyboard.leftValue = 0
+        keyboard.rightValue = 0
+
+        keyboard:UpdateMovement(
+            Enum.UserInputState.End
         )
 
     end
@@ -500,21 +525,15 @@ function Methods.WalkPlayback()
         )
 
         if offset.Magnitude <= REACH_DISTANCE then
-
-            StopMovement()
-
             return true
         end
 
         local direction = offset.Unit
 
-        player:Move(
-            Vector3.new(
-                direction.X,
-                0,
-                direction.Z
-            ),
-            false
+        keyboard.moveVector = Vector3.new(
+            direction.X,
+            0,
+            direction.Z
         )
 
         return false
@@ -548,6 +567,8 @@ function Methods.WalkPlayback()
         if not route[routeIndex] then
 
             StopMovement()
+
+            controls.cameraRelative = oldCameraRelative
 
             print("================================")
             print("WALK REPLAY FINISHED")
@@ -586,6 +607,8 @@ function Methods.WalkPlayback()
     StopMovement()
 
 end
+
+
 -- SPELL CIRCLE
 function Methods.SpellRange()
 
