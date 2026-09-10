@@ -12,7 +12,7 @@ until player.Character
 
 print("character spawned.")
 
-warn("dqr_bot v10!")
+warn("dqr_bot v11!")
     -- load modules
     local Utils = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua"))()
     local Methods = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/methods.lua"))()
