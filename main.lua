@@ -24,7 +24,7 @@ if game.PlaceId == 85776757589518 then -- dungeon
     -- start dungeon
     Methods.DeathRetry(Utils)
     Utils.StartDungeon()
-    Utils.RemoveMap()
+    --Utils.RemoveMap()
     task.wait(6)
 
     -- begin tracking the rooms
