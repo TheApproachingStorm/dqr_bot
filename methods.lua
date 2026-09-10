@@ -1,53 +1,26 @@
-print("METHODS VERSION: FIXED")
+print("methods_module loaded.")
+-- suppress prints
+local print = function() end
+local warn = function() end
+
+
 local Methods = {}
 
+-- LOCATE ENEMIES
+local MIN_CLUSTER_SIZE = 1
+local CLUSTER_DISTANCE = 30
 
--- STAY ABOVE NPCS
-function Methods.AirSuspend()
-    local player = game.Players.LocalPlayer
+-- TRIGGER SPELLS ON ENEMIES
+local ENVELOPMENT_MARGIN = 10
 
-    if getgenv().__AirSuspended then
-        getgenv().__AirSuspended = false
-        return
-    end
+local WebhookURL = "https://discord.com/api/webhooks/1547296212250525751/k4A4GF8CbExrzBysWmLjwlPt3_GbyEUJPPzoiPJAIdOutkQmR7q7HtdIXYK19otRuZBi"
 
-    getgenv().__AirSuspended = true
-
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-
-    if root then
-        local targetY = root.Position.Y + 3
-
-        task.spawn(function()
-            while getgenv().__AirSuspended do
-                if root and root.Parent then
-                    local pos = root.Position
-
-                    root.CFrame = CFrame.new(
-                        pos.X,
-                        targetY,
-                        pos.Z
-                    ) * (root.CFrame - root.Position)
-
-                    root.AssemblyLinearVelocity = Vector3.new(
-                        root.AssemblyLinearVelocity.X,
-                        0,
-                        root.AssemblyLinearVelocity.Z
-                    )
-                end
-
-                task.wait()
-            end
-        end)
-    end
-end
+local wantedNames = {
+        "Enhanced Inner Rage",
+        "Enhanced Inner Focus"
+}
 
 -- LOCATE ENEMIES
-local MIN_CLUSTER_SIZE = 2
-local CLUSTER_DISTANCE = 15
-
-
 function Methods.LocateEnemies(minClusterSize, clusterDistance)
 
     minClusterSize = minClusterSize or MIN_CLUSTER_SIZE
@@ -436,82 +409,74 @@ function Methods.LocateEnemies(minClusterSize, clusterDistance)
     return results
 end
 
--- TWEEN TO CLUSTERS
-function Methods.Tween(targetPosition, speed)
+-- PLAYBACK WALK RECORDING
+function Methods.WalkPlayback()
+
     local Players = game:GetService("Players")
-    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
 
     local player = Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
 
-    speed = speed or 24
+    local character =
+        player.Character or player.CharacterAdded:Wait()
 
-    local PAUSE_DISTANCE = 50
-    local PAUSE_TIME = 1
+    local hrp =
+        character:WaitForChild("HumanoidRootPart")
 
-    local completed = Instance.new("BindableEvent")
+    --==================================================
+    -- CONFIG
+    --==================================================
 
-    task.spawn(function()
-        local startPosition = hrp.Position
-        local totalDistance = (targetPosition - startPosition).Magnitude
+    local RECORDING_FILE = "recording.lua"
 
-        if totalDistance <= 0.1 then
-            completed:Fire()
-            completed:Destroy()
-            return
-        end
+    local LOOK_AHEAD = 3
+    local REACH_DISTANCE = 2
 
-        local direction = (targetPosition - startPosition).Unit
-        local travelled = 0
+    --==================================================
+    -- LOAD FILE
+    --==================================================
 
-        while travelled < totalDistance do
-            local chunkDistance = math.min(
-                PAUSE_DISTANCE,
-                totalDistance - travelled
+    if not isfile or not isfile(RECORDING_FILE) then
+        warn("recording.lua not found.")
+        return
+    end
+
+    local content = readfile(RECORDING_FILE)
+
+    --==================================================
+    -- PARSE ROUTE
+    --==================================================
+
+    local route = {}
+
+    for time, x, y, z in content:gmatch(
+        "{time%s*=%s*([%d%.%-]+),%s*position%s*=%s*Vector3%.new%(([%d%.%-]+),%s*([%d%.%-]+),%s*([%d%.%-]+)%)"
+    ) do
+
+        table.insert(route, {
+            time = tonumber(time),
+            position = Vector3.new(
+                tonumber(x),
+                tonumber(y),
+                tonumber(z)
             )
+        })
 
-            travelled += chunkDistance
+    end
 
-            local nextPosition =
-                startPosition + direction * travelled
+    print("================================")
+    print("WALK RECORDING LOADED")
+    print("Movement points:", #route)
+    print("================================")
 
-            local tween = TweenService:Create(
-                hrp,
-                TweenInfo.new(
-                    chunkDistance / speed,
-                    Enum.EasingStyle.Linear,
-                    Enum.EasingDirection.Out
-                ),
-                {
-                    CFrame = CFrame.new(nextPosition)
-                }
-            )
+    if #route == 0 then
+        warn("WalkPlayback: No movement points found.")
+        return
+    end
 
-            tween:Play()
-            tween.Completed:Wait()
-
-            if travelled < totalDistance then
-                task.wait(PAUSE_TIME)
-            end
-        end
-
-        completed:Fire()
-        completed:Destroy()
-    end)
-
-    return {
-        Completed = completed.Event
-    }
-end
-
--- WALK TO CLUSTERS
-function Methods.WalkTo(targetPosition)
-    local Players = game:GetService("Players")
-
-    local player = Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
+    --==================================================
+    -- PLAYER CONTROLLER
+    --==================================================
 
     local playerModule = require(
         player.PlayerScripts:WaitForChild("PlayerModule")
@@ -521,59 +486,660 @@ function Methods.WalkTo(targetPosition)
     local keyboard = controls:GetActiveController()
 
     if not keyboard then
-        warn("No active controller")
+        warn("WalkPlayback: No active controller.")
         return
     end
 
-    local completed = Instance.new("BindableEvent")
+    local oldCameraRelative = controls.cameraRelative
+    controls.cameraRelative = false
 
-    task.spawn(function()
-        local REACH_DISTANCE = 2
+    --==================================================
+    -- STOP MOVEMENT
+    --==================================================
 
-        local oldCameraRelative = controls.cameraRelative
-        controls.cameraRelative = false
-
-        while true do
-            task.wait()
-
-            local currentPosition = hrp.Position
-
-            local offset = Vector3.new(
-                targetPosition.X - currentPosition.X,
-                0,
-                targetPosition.Z - currentPosition.Z
-            )
-
-            if offset.Magnitude <= REACH_DISTANCE then
-                break
-            end
-
-            local direction = offset.Unit
-
-            keyboard.moveVector = Vector3.new(
-                direction.X,
-                0,
-                direction.Z
-            )
-        end
+    local function StopMovement()
 
         keyboard.moveVector = Vector3.zero
+
         keyboard.forwardValue = 0
         keyboard.backwardValue = 0
         keyboard.leftValue = 0
         keyboard.rightValue = 0
 
-        keyboard:UpdateMovement(Enum.UserInputState.End)
+        keyboard:UpdateMovement(
+            Enum.UserInputState.End
+        )
 
-        controls.cameraRelative = oldCameraRelative
+    end
 
-        completed:Fire()
-        completed:Destroy()
+    --==================================================
+    -- MOVE TOWARD
+    --==================================================
+
+    local function MoveToward(targetPosition)
+
+        local offset = Vector3.new(
+            targetPosition.X - hrp.Position.X,
+            0,
+            targetPosition.Z - hrp.Position.Z
+        )
+
+        if offset.Magnitude <= REACH_DISTANCE then
+            return true
+        end
+
+        local direction = offset.Unit
+
+        keyboard.moveVector = Vector3.new(
+            direction.X,
+            0,
+            direction.Z
+        )
+
+        return false
+    end
+
+    --==================================================
+    -- PLAY ROUTE
+    --==================================================
+
+    local routeIndex = 1
+
+    while true do
+
+        --==================================================
+        -- PAUSED BY PATHFIND
+        --==================================================
+
+        if Methods._PathPaused then
+
+            StopMovement()
+
+            RunService.Heartbeat:Wait()
+
+            continue
+        end
+
+        --==================================================
+        -- ROUTE FINISHED
+        --==================================================
+
+        if not route[routeIndex] then
+
+            StopMovement()
+
+            controls.cameraRelative = oldCameraRelative
+
+            print("================================")
+            print("WALK REPLAY FINISHED")
+            print("================================")
+
+            break
+        end
+
+        --==================================================
+        -- LOOK AHEAD
+        --==================================================
+
+        local targetIndex = math.min(
+            routeIndex + LOOK_AHEAD,
+            #route
+        )
+
+        local targetPosition =
+            route[targetIndex].position
+
+        --==================================================
+        -- MOVE
+        --==================================================
+
+        local reached =
+            MoveToward(targetPosition)
+
+        if reached then
+            routeIndex += 1
+        end
+
+        RunService.Heartbeat:Wait()
+
+    end
+
+    StopMovement()
+
+end
+
+-- SPELL CIRCLE
+function Methods.SpellRange()
+
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+
+    local player = Players.LocalPlayer
+
+    local character =
+        player.Character or player.CharacterAdded:Wait()
+
+    local hrp =
+        character:WaitForChild("HumanoidRootPart")
+
+    local RADIUS = 90
+
+    local circle = Instance.new("Part")
+
+    circle.Name = "SpellRange"
+    circle.Shape = Enum.PartType.Cylinder
+
+    circle.Size = Vector3.new(
+        0.1,
+        RADIUS * 2,
+        RADIUS * 2
+    )
+
+    circle.Anchored = true
+    circle.CanCollide = false
+    circle.CanTouch = false
+    circle.CanQuery = false
+
+    circle.Material = Enum.Material.Neon
+    circle.Color = Color3.fromRGB(224, 224, 47)
+    circle.Transparency = 0.9
+
+    circle.Parent = workspace
+
+    local connection
+
+    connection = RunService.RenderStepped:Connect(function()
+
+        if not hrp or not hrp.Parent then
+            connection:Disconnect()
+            circle:Destroy()
+            return
+        end
+
+        circle.CFrame =
+            hrp.CFrame
+            * CFrame.new(0, -3, 0)
+            * CFrame.Angles(
+                0,
+                0,
+                math.rad(90)
+            )
+
     end)
 
-    return {
-        Completed = completed.Event
-    }
+    return circle
+end
+
+-- PATHFIND (autofarm)
+function Methods.PathFind(Utils)
+
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+
+    local player = Players.LocalPlayer
+
+    local character =
+        player.Character or player.CharacterAdded:Wait()
+
+    local hrp =
+        character:WaitForChild("HumanoidRootPart")
+
+    --==================================================
+    -- RESET STATE
+    --==================================================
+
+    Methods._PathPaused = false
+
+    --==================================================
+    -- LOCATE ENEMIES
+    --==================================================
+
+    print("================================")
+    print("PATHFIND: LOCATING ENEMIES")
+    print("================================")
+
+    local clusters = Methods.LocateEnemies()
+
+    if not clusters or #clusters == 0 then
+        warn("PathFind: No enemy clusters found.")
+    else
+        print(
+            "PathFind: Found",
+            #clusters,
+            "enemy clusters."
+        )
+    end
+
+    --==================================================
+    -- START SPELL RANGE
+    --==================================================
+
+    local spellRange =
+        Methods.SpellRange()
+
+    if not spellRange then
+        warn("PathFind: Failed to create SpellRange.")
+        return
+    end
+
+    local spellRadius =
+        spellRange.Size.Y / 2
+
+    print(
+        "PathFind: Spell radius:",
+        spellRadius
+    )
+
+    --==================================================
+    -- FLAME STRIKE COOLDOWN
+    --==================================================
+
+    local function GetCooldown()
+
+        local backpack =
+            player:FindFirstChild("Backpack")
+
+        if not backpack then
+            return 0
+        end
+
+        local flameStrike =
+            backpack:FindFirstChild("Flame Strike")
+
+        if not flameStrike then
+            return 0
+        end
+
+        local cooldown =
+            flameStrike:FindFirstChild("cooldown")
+
+        if not cooldown then
+            return 0
+        end
+
+        local value = cooldown.Value
+
+        if typeof(value) == "number" then
+            return value
+        end
+
+        return 0
+
+    end
+
+    --==================================================
+    -- STATE
+    --==================================================
+
+    local edgeTriggered = {}
+
+    --==================================================
+    -- CHECK CLUSTERS
+    --==================================================
+
+    local function CheckClusters()
+
+        local visualization =
+            workspace:FindFirstChild(
+                "ClusterVisualization"
+            )
+
+        if not visualization then
+            return
+        end
+
+        for _, clusterCircle in ipairs(
+            visualization:GetChildren()
+        ) do
+
+            if clusterCircle:IsA("BasePart")
+                and clusterCircle.Name:match(
+                    "^ClusterCircle_"
+                )
+            then
+
+                --==========================================
+                -- DISTANCE TO CLUSTER CENTER
+                --==========================================
+
+                local dx =
+                    hrp.Position.X -
+                    clusterCircle.Position.X
+
+                local dz =
+                    hrp.Position.Z -
+                    clusterCircle.Position.Z
+
+                local distance =
+                    math.sqrt(
+                        dx * dx +
+                        dz * dz
+                    )
+
+                --==========================================
+                -- CLUSTER RADIUS
+                --==========================================
+
+                local clusterRadius =
+                    clusterCircle.Size.Y / 2
+
+                --==========================================
+                -- EDGE CONTACT
+                --
+                -- SpellRange has reached the outside
+                -- edge of the cluster.
+                --==========================================
+
+                local touchingEdge =
+                    distance <=
+                    spellRadius + clusterRadius
+
+                --==========================================
+                -- FULL ENVELOPMENT
+                --
+                -- Entire cluster is inside SpellRange.
+                --==========================================
+
+                local fullyEnveloped =
+                        distance + clusterRadius + ENVELOPMENT_MARGIN <=
+                        spellRadius
+
+                --==========================================
+                -- EDGE HIT
+                --==========================================
+
+                if touchingEdge
+                    and not fullyEnveloped
+                    and not edgeTriggered[clusterCircle]
+                then
+
+                    edgeTriggered[clusterCircle] = true
+
+                    Methods._PathPaused = true
+
+                    local cooldown =
+                        GetCooldown()
+
+                    print("================================")
+                    print(
+                        "PathFind: CLUSTER EDGE REACHED"
+                    )
+                    print(
+                        "Cluster:",
+                        clusterCircle.Name
+                    )
+                    print(
+                        "Flame Strike cooldown:",
+                        cooldown
+                    )
+                    print("PathFind: WALK PAUSED")
+                    print("================================")
+
+                    --==================================
+                    -- WAIT FOR COOLDOWN
+                    --==================================
+
+                    if cooldown > 0 then
+
+                        print(
+                            "PathFind: Waiting for Flame Strike cooldown..."
+                        )
+
+                        task.spawn(function()
+
+                            while
+                                clusterCircle.Parent
+                                and GetCooldown() > 0
+                            do
+
+                                RunService.Heartbeat:Wait()
+
+                            end
+
+                            if clusterCircle.Parent then
+
+                                Methods._PathPaused = false
+
+                                print(
+                                    "PathFind: Flame Strike cooldown reset."
+                                )
+
+                                print(
+                                    "PathFind: WALK RESUMED"
+                                )
+
+                            end
+
+                        end)
+
+                    else
+
+                        -- Already off cooldown
+                        Methods._PathPaused = false
+
+                        print(
+                            "PathFind: Flame Strike already ready."
+                        )
+
+                        print(
+                            "PathFind: WALK RESUMED"
+                        )
+
+                    end
+
+                end
+
+                --==========================================
+                -- FULL CLUSTER ENVELOPED
+                --==========================================
+
+                if fullyEnveloped then
+
+                    print("================================")
+                    print(
+                        "PathFind: FULL CLUSTER ENVELOPED"
+                    )
+                    print(
+                        "Cluster:",
+                        clusterCircle.Name
+                    )
+                    print(
+                        "Distance:",
+                        distance
+                    )
+                    print(
+                        "Cluster Radius:",
+                        clusterRadius
+                    )
+                    print(
+                        "Spell Radius:",
+                        spellRadius
+                    )
+
+                    --==================================
+                    -- USE Q
+                    --==================================
+
+                    Utils.UseAbility("q")
+
+                    print(
+                        "PathFind: Q USED"
+                    )
+
+                    --==================================
+                    -- RESUME WALKING
+                    --==================================
+
+                    Methods._PathPaused = false
+
+                    print(
+                        "PathFind: WALK RESUMED AFTER Q"
+                    )
+
+                    --==================================
+                    -- CLEAR OLD STATE
+                    --==================================
+
+                    edgeTriggered[clusterCircle] = nil
+
+                    --==================================
+                    -- REFRESH ENEMY LOCATIONS
+                    --==================================
+
+                    print(
+                        "PathFind: Refreshing enemy locations..."
+                    )
+
+                    Methods.LocateEnemies()
+
+                    print(
+                        "PathFind: Enemy locations refreshed."
+                    )
+
+                    print("================================")
+
+                    -- The old cluster list is now invalid
+                    -- because LocateEnemies() rebuilt it.
+                    return
+
+                end
+
+            end
+
+        end
+
+    end
+
+    --==================================================
+    -- START WALK PLAYBACK
+    --==================================================
+
+    print(
+        "PathFind: Starting WalkPlayback..."
+    )
+
+    task.spawn(function()
+        Methods.WalkPlayback()
+    end)
+
+    --==================================================
+    -- MONITOR
+    --==================================================
+
+    print("================================")
+    print("PATHFIND ACTIVE")
+    print("================================")
+
+    while true do
+
+        if not hrp or not hrp.Parent then
+            break
+        end
+
+        CheckClusters()
+
+        RunService.Heartbeat:Wait()
+
+    end
+
+end
+
+-- DEATH RETRY (loop)
+function Methods.DeathRetry(Utils)
+
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+
+    local function setupCharacter(character)
+
+        local humanoid = character:WaitForChild("Humanoid")
+
+        humanoid.Died:Connect(function()
+
+            print("Death detected. Replaying dungeon...")
+
+            Utils.ReplayDungeon()
+
+        end)
+
+    end
+
+    -- Current character
+    if player.Character then
+        setupCharacter(player.Character)
+    end
+
+    -- Future respawns
+    player.CharacterAdded:Connect(function(character)
+        setupCharacter(character)
+    end)
+
+end
+
+-- FILTER LOOT (loop)
+function Methods.LootFilter(loot)
+
+    if not loot then
+        return
+    end
+
+    for _, wantedName in ipairs(wantedNames) do
+
+        if loot.name == wantedName then
+
+            print("WANTED LOOT FOUND:", loot.name)
+
+            Methods.SendWebhook({
+                loot
+            })
+
+            return true
+        end
+
+    end
+
+    return false
+end
+
+-- WEBHOOK
+function Methods.SendWebhook(FilteredLoot)
+
+    if not FilteredLoot or #FilteredLoot == 0 then
+        return
+    end
+
+    local Players = game:GetService("Players")
+    local HttpService = game:GetService("HttpService")
+
+    local player = Players.LocalPlayer
+
+    for _, loot in ipairs(FilteredLoot) do
+
+        local payload = {
+            content = nil,
+            embeds = {
+                {
+                    title = tostring(loot.name) .. " obtained!",
+                    description = "By player " .. player.Name,
+                    color = 16772723,
+                    thumbnail = {
+                        url = "https://static.wikia.nocookie.net/ucp-internal-test-starter-commons/images/f/fe/Wiki_Character.jpeg/revision/latest/scale-to-width-down/1000?cb=20251205171914"
+                    }
+                }
+            },
+            attachments = {}
+        }
+
+        request({
+            Url = WebhookURL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode(payload)
+        })
+
+    end
 end
 
 return Methods
