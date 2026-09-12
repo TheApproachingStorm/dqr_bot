@@ -31,7 +31,9 @@ until player.Character
     and player.Character:FindFirstChild("HumanoidRootPart")
 
 print("character spawned.")
-warn("dqr_bot v10!")
+warn("dqr_bot v11!")
+
+task.wait(5)
 
 --==================================================
 -- LOAD MODULES
