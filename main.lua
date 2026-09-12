@@ -31,14 +31,14 @@ until player.Character
     and player.Character:FindFirstChild("HumanoidRootPart")
 
 print("character spawned.")
-warn("dqr_bot v9!")
+warn("dqr_bot v10!")
 
 --==================================================
 -- LOAD MODULES
 --==================================================
 
-local Utils = loadstring(readfile("dqr_bot-main/utils.lua"))()
-local Methods = loadstring(readfile("dqr_bot-main/methods.lua"))()
+local Utils = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/utils.lua"))()
+local Methods = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/methods.lua"))()
 
 -- optimize alt accounts
     if player.Name ~= CARRY_ACCOUNT then
