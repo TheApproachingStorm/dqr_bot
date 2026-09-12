@@ -1,7 +1,7 @@
 print("methods_module loaded.")
 -- suppress prints
-local print = function() end
-local warn = function() end
+--local print = function() end
+--local warn = function() end
 
 local INVENTORY_LIMIT = 290
 
