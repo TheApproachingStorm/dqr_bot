@@ -1,7 +1,7 @@
 print("methods_module loaded.")
 -- suppress prints
---local print = function() end
---local warn = function() end
+local print = function() end
+local warn = function() end
 
 local INVENTORY_LIMIT = 290
 
@@ -429,7 +429,7 @@ function Methods.WalkPlayback()
     -- CONFIG
     --==================================================
 
-    local RECORDING_FILE = "recording.lua"
+    local RECORDING_URL = "https://raw.githubusercontent.com/TheApproachingStorm/dqr_bot/main/recording.lua"
 
     local LOOK_AHEAD = 3
     local REACH_DISTANCE = 2
